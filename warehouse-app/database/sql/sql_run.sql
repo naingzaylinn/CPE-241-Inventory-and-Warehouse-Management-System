@@ -1,13 +1,3 @@
-DROP TABLE IF EXISTS stock_adjustment_line CASCADE;
-DROP TABLE IF EXISTS stock_adjustment_header CASCADE;
-DROP TABLE IF EXISTS stock_sales_line CASCADE;
-DROP TABLE IF EXISTS stock_sales_header CASCADE;
-DROP TABLE IF EXISTS stock_purchase_line CASCADE;
-DROP TABLE IF EXISTS stock_purchase_header CASCADE;
-DROP TABLE IF EXISTS bill_of_materials CASCADE;
-DROP TABLE IF EXISTS product CASCADE;
-DROP TABLE IF EXISTS customer CASCADE;
-DROP TABLE IF EXISTS supplier CASCADE;
-DROP TABLE IF EXISTS warehouse CASCADE;
-DROP TABLE IF EXISTS units CASCADE;
-DROP TABLE IF EXISTS product_type CASCADE;
+-- Full reset — drops everything and recreates from scratch
+\i /docker-entrypoint-initdb.d/01_schema.sql
+\i /sql/003_seed.sql
