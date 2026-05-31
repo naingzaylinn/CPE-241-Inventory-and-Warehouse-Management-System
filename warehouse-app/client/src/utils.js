@@ -1,14 +1,21 @@
-export const formatDate = (dateStr) => {
-  if (!dateStr) return '—'
-  return dateStr.split('T')[0]
+export const formatDate = (val) => {
+  if (!val) return '—'
+  return String(val).split('T')[0]
 }
 
-export const formatNumber = (n, decimals = 2) => {
-  if (n === null || n === undefined) return '—'
-  return parseFloat(n).toFixed(decimals)
+export const formatNumber = (val, decimals = 2) => {
+  if (val === null || val === undefined || val === '') return '—'
+  return parseFloat(val).toFixed(decimals)
 }
 
-export const formatBaht = (n) => {
-  if (n === null || n === undefined) return '—'
-  return parseFloat(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+export const formatBaht = (val) => {
+  if (val === null || val === undefined) return '—'
+  return parseFloat(val).toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
 }
+
+export const today = () => new Date().toISOString().split('T')[0]
+
+export const emptyStr = (v) => v === null || v === undefined || v === '' ? '—' : v
