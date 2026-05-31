@@ -1,6 +1,6 @@
 -- ============================================================
 -- Inventory and Warehouse Management System
--- Schema only — runs on first container start
+-- Schema only
 -- ============================================================
 
 -- Drop tables in reverse FK order
@@ -18,8 +18,7 @@ DROP TABLE IF EXISTS warehouse CASCADE;
 DROP TABLE IF EXISTS supplier CASCADE;
 DROP TABLE IF EXISTS customer CASCADE;
 
--- ── Lookup tables ────────────────────────────────────────────
-
+-- Lookup tables
 CREATE TABLE product_type (
   type_id   VARCHAR(10) PRIMARY KEY,
   type_name VARCHAR(50) NOT NULL
@@ -48,105 +47,79 @@ CREATE TABLE customer (
   contact_info  VARCHAR(200)
 );
 
--- ── Product & BOM ────────────────────────────────────────────
-
+-- Product
 CREATE TABLE product (
   product_code VARCHAR(20)     PRIMARY KEY,
   product_name VARCHAR(100)    NOT NULL,
-  type_id      VARCHAR(10)     NOT NULL REFERENCES product_type(type_id)
-                               ON DELETE RESTRICT ON UPDATE CASCADE,
-  unit_id      VARCHAR(10)     NOT NULL REFERENCES units(unit_id)
-                               ON DELETE RESTRICT ON UPDATE CASCADE,
+  type_id      VARCHAR(10)     NOT NULL REFERENCES product_type(type_id),
+  unit_id      VARCHAR(10)     NOT NULL REFERENCES units(unit_id),
   price        DECIMAL(10,2)   NOT NULL CHECK (price >= 0),
   has_bom      BOOLEAN         NOT NULL DEFAULT false
 );
 
 CREATE TABLE bill_of_materials (
-  bom_id          SERIAL         PRIMARY KEY,
-  product_code    VARCHAR(20)    NOT NULL REFERENCES product(product_code)
-                                 ON DELETE RESTRICT ON UPDATE CASCADE,
-  material_code   VARCHAR(20)    NOT NULL REFERENCES product(product_code)
-                                 ON DELETE RESTRICT ON UPDATE CASCADE,
-  quantity_needed DECIMAL(10,3)  NOT NULL CHECK (quantity_needed > 0),
-  unit_id         VARCHAR(10)    NOT NULL REFERENCES units(unit_id)
-                                 ON DELETE RESTRICT ON UPDATE CASCADE,
-  unit_price      DECIMAL(10,2)  NOT NULL CHECK (unit_price >= 0)
+  bom_id          SERIAL PRIMARY KEY,
+  product_code    VARCHAR(20) NOT NULL REFERENCES product(product_code),
+  material_code   VARCHAR(20) NOT NULL REFERENCES product(product_code),
+  quantity_needed DECIMAL(10,3) NOT NULL,
+  unit_id         VARCHAR(10) NOT NULL REFERENCES units(unit_id),
+  unit_price      DECIMAL(10,2) NOT NULL
 );
 
--- ── Stock Purchase ───────────────────────────────────────────
-
+-- Stock Purchase
 CREATE TABLE stock_header (
   stock_no     VARCHAR(20) PRIMARY KEY,
   stock_date   DATE        NOT NULL,
-  warehouse_id VARCHAR(10) NOT NULL REFERENCES warehouse(warehouse_id)
-                           ON DELETE RESTRICT ON UPDATE CASCADE,
-  reason       VARCHAR(50) NOT NULL
-                           CHECK (reason IN ('Purchase', 'Purchase Return')),
+  warehouse_id VARCHAR(10) NOT NULL REFERENCES warehouse(warehouse_id),
+  reason       VARCHAR(50) NOT NULL,
   supplier_id  VARCHAR(10) NOT NULL REFERENCES supplier(supplier_id)
-                           ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE stock_purchase_line (
-  line_id      SERIAL        PRIMARY KEY,
-  stock_no     VARCHAR(20)   NOT NULL REFERENCES stock_header(stock_no)
-                             ON DELETE CASCADE ON UPDATE CASCADE,
-  product_code VARCHAR(20)   NOT NULL REFERENCES product(product_code)
-                             ON DELETE RESTRICT ON UPDATE CASCADE,
+  line_id      SERIAL PRIMARY KEY,
+  stock_no     VARCHAR(20) NOT NULL REFERENCES stock_header(stock_no),
+  product_code VARCHAR(20) NOT NULL REFERENCES product(product_code),
   ref_po_no    VARCHAR(20),
-  quantity_in  DECIMAL(10,3) CHECK (quantity_in > 0),
-  quantity_out DECIMAL(10,3) CHECK (quantity_out > 0),
-  unit_id      VARCHAR(10)   NOT NULL REFERENCES units(unit_id)
-                             ON DELETE RESTRICT ON UPDATE CASCADE,
-  unit_price   DECIMAL(10,2) NOT NULL CHECK (unit_price >= 0)
+  quantity_in  DECIMAL(10,3),
+  quantity_out DECIMAL(10,3),
+  unit_id      VARCHAR(10) NOT NULL REFERENCES units(unit_id),
+  unit_price   DECIMAL(10,2) NOT NULL
 );
 
--- ── Stock Sales ──────────────────────────────────────────────
-
+-- Stock Sales
 CREATE TABLE stock_sales_header (
   stock_no     VARCHAR(20) PRIMARY KEY,
   stock_date   DATE        NOT NULL,
-  warehouse_id VARCHAR(10) NOT NULL REFERENCES warehouse(warehouse_id)
-                           ON DELETE RESTRICT ON UPDATE CASCADE,
-  reason       VARCHAR(50) NOT NULL
-                           CHECK (reason IN ('Sales', 'Sales Return')),
+  warehouse_id VARCHAR(10) NOT NULL REFERENCES warehouse(warehouse_id),
+  reason       VARCHAR(50) NOT NULL,
   customer_id  VARCHAR(10) NOT NULL REFERENCES customer(customer_id)
-                           ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE stock_sales_line (
-  line_id      SERIAL        PRIMARY KEY,
-  stock_no     VARCHAR(20)   NOT NULL REFERENCES stock_sales_header(stock_no)
-                             ON DELETE CASCADE ON UPDATE CASCADE,
-  product_code VARCHAR(20)   NOT NULL REFERENCES product(product_code)
-                             ON DELETE RESTRICT ON UPDATE CASCADE,
+  line_id      SERIAL PRIMARY KEY,
+  stock_no     VARCHAR(20) NOT NULL REFERENCES stock_sales_header(stock_no),
+  product_code VARCHAR(20) NOT NULL REFERENCES product(product_code),
   ref_so_no    VARCHAR(20),
-  quantity_out DECIMAL(10,3) CHECK (quantity_out > 0),
-  quantity_in  DECIMAL(10,3) CHECK (quantity_in > 0),
-  unit_id      VARCHAR(10)   NOT NULL REFERENCES units(unit_id)
-                             ON DELETE RESTRICT ON UPDATE CASCADE,
-  unit_price   DECIMAL(10,2) NOT NULL CHECK (unit_price >= 0)
+  quantity_out DECIMAL(10,3),
+  quantity_in  DECIMAL(10,3),
+  unit_id      VARCHAR(10) NOT NULL REFERENCES units(unit_id),
+  unit_price   DECIMAL(10,2) NOT NULL
 );
 
--- ── Stock Adjustment ─────────────────────────────────────────
-
+-- Stock Adjustment
 CREATE TABLE stock_adjustment_header (
-  stock_no               VARCHAR(20)  PRIMARY KEY,
-  stock_date             DATE         NOT NULL,
-  warehouse_id           VARCHAR(10)  NOT NULL REFERENCES warehouse(warehouse_id)
-                                      ON DELETE RESTRICT ON UPDATE CASCADE,
-  reason                 VARCHAR(50)  NOT NULL DEFAULT 'Stock Adjustment',
-  reason_for_adjustment  VARCHAR(200) NOT NULL
+  stock_no VARCHAR(20) PRIMARY KEY,
+  stock_date DATE NOT NULL,
+  warehouse_id VARCHAR(10) NOT NULL REFERENCES warehouse(warehouse_id),
+  reason VARCHAR(50) NOT NULL,
+  reason_for_adjustment VARCHAR(200) NOT NULL
 );
 
 CREATE TABLE stock_adjustment_line (
-  line_id          SERIAL        PRIMARY KEY,
-  stock_no         VARCHAR(20)   NOT NULL REFERENCES stock_adjustment_header(stock_no)
-                                 ON DELETE CASCADE ON UPDATE CASCADE,
-  product_code     VARCHAR(20)   NOT NULL REFERENCES product(product_code)
-                                 ON DELETE RESTRICT ON UPDATE CASCADE,
-  unit_id          VARCHAR(10)   NOT NULL REFERENCES units(unit_id)
-                                 ON DELETE RESTRICT ON UPDATE CASCADE,
-  system_balance   DECIMAL(10,3) NOT NULL,
-  checked_balance  DECIMAL(10,3) NOT NULL CHECK (checked_balance >= 0),
-  quantity_adjust  DECIMAL(10,3) GENERATED ALWAYS AS (checked_balance - system_balance) STORED
+  line_id SERIAL PRIMARY KEY,
+  stock_no VARCHAR(20) NOT NULL REFERENCES stock_adjustment_header(stock_no),
+  product_code VARCHAR(20) NOT NULL REFERENCES product(product_code),
+  unit_id VARCHAR(10) NOT NULL REFERENCES units(unit_id),
+  system_balance DECIMAL(10,3) NOT NULL,
+  checked_balance DECIMAL(10,3) NOT NULL
 );
