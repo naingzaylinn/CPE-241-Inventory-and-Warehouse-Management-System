@@ -1,3 +1,7 @@
-export default function Loading() {
-  return <p className="text-muted text-center" style={{ padding: '24px' }}>Loading...</p>
+export default function Loading({ text = 'Loading...' }) {
+  return (
+    <div className="loading">
+      <p>{text}</p>
+    </div>
+  )
 }
