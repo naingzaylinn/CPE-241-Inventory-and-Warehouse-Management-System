@@ -57,8 +57,8 @@ exports.stockByType = async (f = {}) => {
        WHERE h.stock_date<=$4 AND h.reason='Sales Return'
        UNION ALL
        SELECT l.product_code,
-         CASE WHEN l.quantity_adjust>0 THEN l.quantity_adjust ELSE 0 END,
-         CASE WHEN l.quantity_adjust<0 THEN ABS(l.quantity_adjust) ELSE 0 END
+         CASE WHEN (l.checked_balance - l.system_balance)>0 THEN (l.checked_balance - l.system_balance) ELSE 0 END,
+         CASE WHEN (l.checked_balance - l.system_balance)<0 THEN ABS(l.checked_balance - l.system_balance) ELSE 0 END
        FROM stock_adjustment_header h JOIN stock_adjustment_line l ON h.stock_no=l.stock_no
        WHERE h.stock_date<=$5
      )
@@ -188,8 +188,8 @@ exports.stockBalance = async (f = {}) => {
        WHERE h.reason='Sales Return' AND h.stock_date<=$4
        UNION ALL
        SELECT h.warehouse_id,l.product_code,
-         CASE WHEN l.quantity_adjust>0 THEN l.quantity_adjust ELSE 0 END,
-         CASE WHEN l.quantity_adjust<0 THEN ABS(l.quantity_adjust) ELSE 0 END
+         CASE WHEN (l.checked_balance - l.system_balance)>0 THEN (l.checked_balance - l.system_balance) ELSE 0 END,
+         CASE WHEN (l.checked_balance - l.system_balance)<0 THEN ABS(l.checked_balance - l.system_balance) ELSE 0 END
        FROM stock_adjustment_header h JOIN stock_adjustment_line l ON h.stock_no=l.stock_no
        WHERE h.stock_date<=$5
      )
@@ -225,8 +225,8 @@ exports.stockCard = async (f = {}) => {
        FROM stock_sales_header h JOIN stock_sales_line l ON h.stock_no=l.stock_no WHERE h.reason='Sales Return'
        UNION ALL
        SELECT h.stock_date,h.stock_no,h.warehouse_id,l.product_code,'Adjustment',
-         CASE WHEN l.quantity_adjust>0 THEN l.quantity_adjust ELSE 0 END,
-         CASE WHEN l.quantity_adjust<0 THEN ABS(l.quantity_adjust) ELSE 0 END
+         CASE WHEN (l.checked_balance - l.system_balance)>0 THEN (l.checked_balance - l.system_balance) ELSE 0 END,
+         CASE WHEN (l.checked_balance - l.system_balance)<0 THEN ABS(l.checked_balance - l.system_balance) ELSE 0 END
        FROM stock_adjustment_header h JOIN stock_adjustment_line l ON h.stock_no=l.stock_no
      )
      SELECT m.stock_date,m.stock_no,w.warehouse_name,p.product_code,p.product_name,m.reason,m.qi AS qty_in,m.qo AS qty_out
@@ -241,9 +241,9 @@ exports.adjustmentByProduct = async (f = {}) => {
   return (await db.query(
     `WITH s AS (
        SELECT p.product_code,p.product_name,
-         SUM(CASE WHEN l.quantity_adjust>0 THEN l.quantity_adjust ELSE 0 END) AS qty_added,
-         SUM(CASE WHEN l.quantity_adjust<0 THEN ABS(l.quantity_adjust) ELSE 0 END) AS qty_removed,
-         SUM(l.quantity_adjust) AS net_change,
+         SUM(CASE WHEN (l.checked_balance - l.system_balance)>0 THEN (l.checked_balance - l.system_balance) ELSE 0 END) AS qty_added,
+         SUM(CASE WHEN (l.checked_balance - l.system_balance)<0 THEN ABS(l.checked_balance - l.system_balance) ELSE 0 END) AS qty_removed,
+         SUM(l.checked_balance - l.system_balance) AS net_change,
          COUNT(l.stock_no) AS adjustment_vouchers_count
        FROM stock_adjustment_header h JOIN stock_adjustment_line l ON h.stock_no=l.stock_no
        JOIN product p ON l.product_code=p.product_code
