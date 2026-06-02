@@ -5,21 +5,23 @@ import { unitsApi } from '../../api/units.api'
 export default function UnitPage() {
   const { id } = useParams()
   const nav = useNavigate()
-  const isNew = id === 'new'
+  const isNew = !id || id === 'new'
   const [form, setForm] = useState({ unit_id: '', unit_name: '' })
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!isNew) unitsApi.get(id).then(setForm).catch(() => nav('/units'))
-  }, [id])
+  }, [id, isNew, nav])
 
   const save = async () => {
     try {
+      setError('')
       if (isNew) await unitsApi.create(form)
       else await unitsApi.update(id, { unit_name: form.unit_name })
       nav('/units')
     } catch (e) {
-      setError(e.data?.field_errors?.[0]?.reason || e.data?.message || 'Error')
+      const errData = e?.response?.data || e?.data || e
+      setError(errData?.field_errors?.[0]?.reason || errData?.message || 'Error saving unit')
     }
   }
 
@@ -41,8 +43,8 @@ export default function UnitPage() {
               onChange={e => setForm({ ...form, unit_name: e.target.value })} placeholder="e.g. Piece" />
           </div>
         </div>
-        {error && <p className="error-text">{error}</p>}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        {error && <p className="error-text" style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
           <button className="btn-secondary" onClick={() => nav('/units')}>Cancel</button>
           <button className="btn-primary" onClick={save}>Save</button>
         </div>
