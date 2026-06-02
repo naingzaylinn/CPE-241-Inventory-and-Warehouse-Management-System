@@ -68,3 +68,4 @@ exports.remove = async (id) => {
   await db.query('DELETE FROM stock_purchase_line WHERE stock_no=$1', [id])
   await db.query('DELETE FROM stock_header WHERE stock_no=$1', [id])
 }
+
