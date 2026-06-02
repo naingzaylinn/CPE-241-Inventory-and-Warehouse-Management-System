@@ -5,21 +5,23 @@ import { warehousesApi } from '../../api/warehouses.api'
 export default function WarehousePage() {
   const { id } = useParams()
   const nav = useNavigate()
-  const isNew = id === 'new'
+  const isNew = !id || id === 'new'
   const [form, setForm] = useState({ warehouse_id: '', warehouse_name: '', location: '' })
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!isNew) warehousesApi.get(id).then(r => setForm({ ...r, location: r.location || '' })).catch(() => nav('/warehouses'))
-  }, [id])
+  }, [id, isNew, nav])
 
   const save = async () => {
     try {
+      setError('')
       if (isNew) await warehousesApi.create(form)
       else await warehousesApi.update(id, { warehouse_name: form.warehouse_name, location: form.location })
       nav('/warehouses')
     } catch (e) {
-      setError(e.data?.field_errors?.[0]?.reason || e.data?.message || 'Error')
+      const errData = e?.response?.data || e?.data || e
+      setError(errData?.field_errors?.[0]?.reason || errData?.message || 'Error saving warehouse')
     }
   }
 
@@ -41,15 +43,15 @@ export default function WarehousePage() {
               onChange={e => setForm({ ...form, warehouse_name: e.target.value })} placeholder="e.g. Main Warehouse" />
           </div>
         </div>
-        <div className="form-row">
+        <div className="form-row" style={{ marginTop: 12 }}>
           <div className="form-group">
             <label>Location</label>
             <input value={form.location}
               onChange={e => setForm({ ...form, location: e.target.value })} placeholder="e.g. Bangkok Zone A" />
           </div>
         </div>
-        {error && <p className="error-text">{error}</p>}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        {error && <p className="error-text" style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
           <button className="btn-secondary" onClick={() => nav('/warehouses')}>Cancel</button>
           <button className="btn-primary" onClick={save}>Save</button>
         </div>
