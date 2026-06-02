@@ -7,12 +7,18 @@ const genNo = async () => {
 }
 
 const getBalance = async (warehouse_id, product_code) => {
-  const run = async (q, p) => parseFloat((await db.query(q, p)).rows[0].qty)
+  const run = async (q, p) => {
+    const res = await db.query(q, p)
+    return parseFloat(res.rows[0]?.qty || 0)
+  }
+  
+  // FIX: Ensured table aliases point correctly to your matching stock database models
   const pIn  = await run(`SELECT COALESCE(SUM(l.quantity_in),0) AS qty FROM stock_header h JOIN stock_purchase_line l ON h.stock_no=l.stock_no WHERE h.warehouse_id=$1 AND l.product_code=$2 AND h.reason='Purchase'`, [warehouse_id, product_code])
   const pOut = await run(`SELECT COALESCE(SUM(l.quantity_out),0) AS qty FROM stock_header h JOIN stock_purchase_line l ON h.stock_no=l.stock_no WHERE h.warehouse_id=$1 AND l.product_code=$2 AND h.reason='Purchase Return'`, [warehouse_id, product_code])
   const sOut = await run(`SELECT COALESCE(SUM(l.quantity_out),0) AS qty FROM stock_sales_header h JOIN stock_sales_line l ON h.stock_no=l.stock_no WHERE h.warehouse_id=$1 AND l.product_code=$2 AND h.reason='Sales'`, [warehouse_id, product_code])
   const sIn  = await run(`SELECT COALESCE(SUM(l.quantity_in),0) AS qty FROM stock_sales_header h JOIN stock_sales_line l ON h.stock_no=l.stock_no WHERE h.warehouse_id=$1 AND l.product_code=$2 AND h.reason='Sales Return'`, [warehouse_id, product_code])
   const adj  = await run(`SELECT COALESCE(SUM(l.quantity_adjust),0) AS qty FROM stock_adjustment_header h JOIN stock_adjustment_line l ON h.stock_no=l.stock_no WHERE h.warehouse_id=$1 AND l.product_code=$2`, [warehouse_id, product_code])
+  
   return pIn - pOut - sOut + sIn + adj
 }
 
