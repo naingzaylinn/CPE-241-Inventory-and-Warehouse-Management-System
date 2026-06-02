@@ -9,8 +9,6 @@ import { formatDate, formatNumber } from '../../utils'
 export default function StockSalesPage() {
   const { id } = useParams()
   const nav = useNavigate()
-  
-  // FIX: Intercept parameter loops
   const isNew = !id || id === 'new'
   
   const [form, setForm] = useState({ stock_date: new Date().toISOString().split('T')[0], warehouse_id: '', reason: 'Sales', customer_id: '' })
@@ -34,12 +32,16 @@ export default function StockSalesPage() {
 
   const addLine = () => setLines([...lines, { product_code: '', ref_so_no: '', quantity_out: '1', quantity_in: '1', unit_price: '0' }])
   const removeLine = (i) => setLines(lines.filter((_, idx) => idx !== i))
+  
   const updateLine = (i, field, value) => {
     const updated = [...lines]
     updated[i][field] = value
     if (field === 'product_code') {
       const prod = products.find(p => p.product_code === value)
-      if (prod) { updated[i].unit_name = prod.unit_name; updated[i].unit_price = prod.price }
+      if (prod) { 
+        updated[i].unit_name = prod.unit_name
+        updated[i].unit_price = prod.price 
+      }
     }
     setLines(updated)
   }
@@ -48,10 +50,11 @@ export default function StockSalesPage() {
     try {
       setError('')
       if (lines.length === 0) {
-        setError('Transaction documents require at least 1 line item entry.')
+        setError('Transaction documents require at least 1 row line item.')
         return
       }
 
+      // FIX: Clean payload compilation matching the exact attributes of stock_sales_line
       const payload = { 
         ...form,
         line_items: lines.map(l => ({
@@ -66,7 +69,7 @@ export default function StockSalesPage() {
       nav('/stock/sales')
     } catch (e) {
       const errData = e?.response?.data || e?.data || e
-      setError(errData?.field_errors?.[0]?.reason || errData?.message || 'Error processing sales save')
+      setError(errData?.field_errors?.[0]?.reason || errData?.message || 'Error processing sales update')
     }
   }
 
